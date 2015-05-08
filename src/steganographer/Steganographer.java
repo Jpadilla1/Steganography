@@ -10,18 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-/*
- * El programa preguntara por los nombres de los archvos de: (1) el portador, (2) los datos que se quieren esconder, (3) la estegoimagen.
- * El portador debe ser un archivo más grande que los datos que se quieren esconder. Debe validar que esto siempre sea asi.
- * Utilizará la técnica de comparacion para obtener el valor escondido. 
- * Usted lo probara con sus datos el profesor lo probará con sus datos.
- * No es necesario desplegar la imagen, simplemente esconder y revelar la informacion.
- * Tenga cuidado con los pixeles blancos.
- * El formato de las imagenes será el PPM. En este caso el PPM P3.
-    
- * Podra utilizar cualquier imagen que quiera para sus pruebas.
- * El profesor les facilita el trabajo, ya que puede utilizar alguna de estas imagenes provistas.
- */
+
 public class Steganographer {
 
     private final PPMImage image;
@@ -30,8 +19,8 @@ public class Steganographer {
         this.image = new PPMImage(image);
     }
 
-    public boolean canHide(byte[] bytes) {
-        return this.image.getSize() > bytes.length;
+    public boolean canHide(long size) {
+        return this.image.getPixels().size() > size;
     }
 
     private boolean canHideInPixel(Pixel pixel) {
@@ -58,11 +47,11 @@ public class Steganographer {
     }
 
     public void hide(byte[] bytes, String type) {
-        if (canHide(bytes)) {
+        ArrayList<Integer> bits = getBytesInBits(bytes);
+        if (canHide(bits.size())) {
             int bitIndex = 0;
             ArrayList<Pixel> newImage = new ArrayList<>();
             int size = this.image.getPixels().size();
-            ArrayList<Integer> bits = getBytesInBits(bytes);
             for (int idx = 0; idx < size; idx++) {
                 Pixel pixel = new Pixel(this.image.getPixels().get(idx));
                 if (canHideInPixel(pixel)) {
@@ -142,7 +131,7 @@ public class Steganographer {
         return message.trim();
     }
     
-    public void printBitsToFile(ArrayList<Integer> bits) {
+    private void printBitsToFile(ArrayList<Integer> bits) {
         try {
             ArrayList<String> lines = new ArrayList<>();
             ArrayList<String> bytes = new ArrayList<>();
@@ -176,7 +165,7 @@ public class Steganographer {
 
     public static void main(String[] args) throws IOException {
         String type        = "text";
-        String textToHide  = "Vamos a esconder a carly!";
+        String textToHide  = "Let's hide some text!";
         File keyImage      = new File("/Users/josepadilla/Desktop/cotorra.ppm");
         File keyImageBig   = new File("/Users/josepadilla/Desktop/screenshot.ppm");
         File stegFile      = new File("/Users/josepadilla/Desktop/stego-image.ppm");

@@ -41,11 +41,15 @@ public class Pixel {
     @Override
     public boolean equals(Object obj) {
         Pixel otherPixel = (Pixel) obj;
-        return this.R == otherPixel.getR() && this.G == otherPixel.getG() && this.B == otherPixel.getB();
+        return this.R == otherPixel.getR()
+            && this.G == otherPixel.getG()
+            && this.B == otherPixel.getB();
     }
     
     @Override
     public String toString() {
-        return this.getR() + " " + this.getG() + " " + this.getB();
+        return this.getR() + " "
+             + this.getG() + " "
+             + this.getB();
     }
 }
