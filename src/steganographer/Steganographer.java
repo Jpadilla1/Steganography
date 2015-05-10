@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import imageconverter.ImageConverter;
+import java.util.regex.Pattern;
 
 
 public class Steganographer {
@@ -120,15 +121,14 @@ public class Steganographer {
         }
     }
     
-    // Bug here weird NumberFormatException
-    // Exception in thread "main" java.lang.NumberFormatException: For input string: "0000000137"
-    // Maybe in the tmp string.
     private String bitsToString(ArrayList<Integer> bits) {
         String message = "";
-//        System.out.println(bits);
         for (int i = 0; i < bits.size(); i+=8) {
             if ((i + 8) < bits.size()) {
                 String tmp = String.join("", bits.subList(i, i+8).stream().map(x -> Integer.toString(x)).collect(Collectors.joining("")));
+                if (!Pattern.matches("[01]+", tmp)) {
+                    break;
+                }
                 String letter = new Character((char)Integer.parseInt(tmp, 2)).toString();
                 message += letter;
             }
@@ -171,7 +171,7 @@ public class Steganographer {
     public static void main(String[] args) throws IOException {
         String type            = "text";
         String textToHide      = "Let's hide some text!";
-        String keyImagePath    = "/Users/josepadilla/Desktop/nissan.jpg";
+        String keyImagePath    = "/Users/josepadilla/Desktop/nissan.ppm";
         String keyImageBigPath = "/Users/josepadilla/Desktop/test.png";
         File keyImage          = new File(keyImagePath);
         File keyImageBig       = new File(keyImageBigPath);
@@ -194,22 +194,39 @@ public class Steganographer {
         steg.hide(textToHide.getBytes(), type);
         steg.reveal(stegFile, type);
         
+        try {
+            ImageConverter.convert("/Users/josepadilla/Desktop/stego-image.ppm", "jpg");
+            ImageConverter.convert("/Users/josepadilla/Desktop/stego-image.jpg", "ppm");
+
+            // Hiding text in PPM Image
+            Steganographer steg2 = new Steganographer(keyImage);
+            steg2.reveal(stegFile, type);
         
-        // Check if image needs conversion
-        if (!getFileExtensionFromPath(keyImageBigPath).equals("ppm")) {
-            try {
-                keyImageBig = new File(ImageConverter.convert(keyImageBigPath, "ppm"));
-                System.out.println("Successfully converted file to PPM!");
-            } catch (Exception ex) {
-                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
-            }
+//        try {
+//                ImageConverter.convert("/Users/josepadilla/Desktop/stego-image.ppm", "jpg");
+//                System.out.println("Successfully converted file to PPM!");
+//            } catch (Exception ex) {
+//                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        
+//        // Check if image needs conversion
+//        if (!getFileExtensionFromPath(keyImageBigPath).equals("ppm")) {
+//            try {
+//                keyImageBig = new File(ImageConverter.convert(keyImageBigPath, "ppm"));
+//                System.out.println("Successfully converted file to PPM!");
+//            } catch (Exception ex) {
+//                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        }
+//        
+//        // Hiding image inside PPM Image
+//        type = "photo";
+//        Steganographer steg2 = new Steganographer(keyImageBig);
+//        steg2.hide(imageToHide, type);
+//        steg2.reveal(stegFile, type);
+        } catch (Exception ex) {
+            Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        // Hiding image inside PPM Image
-        type = "photo";
-        Steganographer steg2 = new Steganographer(keyImageBig);
-        steg2.hide(imageToHide, type);
-        steg2.reveal(stegFile, type);
         
     }
     
