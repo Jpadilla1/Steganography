@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import imageconverter.ImageConverter;
 
 
 public class Steganographer {
@@ -82,11 +83,11 @@ public class Steganographer {
             Pixel other = messageImage.getPixels().get(i);
             if (pixelHasData(orig, other)) {
                 if (orig.getR() < 255)
-                    data.add(Math.abs(orig.getR() - other.getR()));
+                    data.add(Math.abs(orig.getR() - other.getR()));                    
                 if (orig.getG() < 255)
-                    data.add(Math.abs(orig.getG() - other.getG()));
+                    data.add(Math.abs(orig.getG() - other.getG()));                
                 if (orig.getB() < 255)
-                    data.add(Math.abs(orig.getB() - other.getB()));
+                    data.add(Math.abs(orig.getB() - other.getB()));                    
             }
         }
         if (type.equals("text"))
@@ -119,8 +120,12 @@ public class Steganographer {
         }
     }
     
+    // Bug here weird NumberFormatException
+    // Exception in thread "main" java.lang.NumberFormatException: For input string: "0000000137"
+    // Maybe in the tmp string.
     private String bitsToString(ArrayList<Integer> bits) {
         String message = "";
+//        System.out.println(bits);
         for (int i = 0; i < bits.size(); i+=8) {
             if ((i + 8) < bits.size()) {
                 String tmp = String.join("", bits.subList(i, i+8).stream().map(x -> Integer.toString(x)).collect(Collectors.joining("")));
@@ -164,23 +169,55 @@ public class Steganographer {
     }
 
     public static void main(String[] args) throws IOException {
-        String type        = "text";
-        String textToHide  = "Let's hide some text!";
-        File keyImage      = new File("/Users/josepadilla/Desktop/cotorra.ppm");
-        File keyImageBig   = new File("/Users/josepadilla/Desktop/screenshot.ppm");
-        File stegFile      = new File("/Users/josepadilla/Desktop/stego-image.ppm");
-        Path pathOfImage   = Paths.get("/Users/josepadilla/Desktop/nissan.ppm");
-        byte[] imageToHide = Files.readAllBytes(pathOfImage);
+        String type            = "text";
+        String textToHide      = "Let's hide some text!";
+        String keyImagePath    = "/Users/josepadilla/Desktop/nissan.jpg";
+        String keyImageBigPath = "/Users/josepadilla/Desktop/test.png";
+        File keyImage          = new File(keyImagePath);
+        File keyImageBig       = new File(keyImageBigPath);
+        File stegFile          = new File("/Users/josepadilla/Desktop/stego-image.ppm");
+        Path pathOfImage       = Paths.get("/Users/josepadilla/Desktop/nissan.ppm");
+        byte[] imageToHide     = Files.readAllBytes(pathOfImage);
+        
+        // Check if image needs conversion
+        if (!getFileExtensionFromPath(keyImagePath).equals("ppm")) {
+            try {
+                keyImage = new File(ImageConverter.convert(keyImagePath, "ppm"));
+                System.out.println("Successfully converted file to PPM!");
+            } catch (Exception ex) {
+                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         
         // Hiding text in PPM Image
         Steganographer steg = new Steganographer(keyImage);
         steg.hide(textToHide.getBytes(), type);
         steg.reveal(stegFile, type);
         
+        
+        // Check if image needs conversion
+        if (!getFileExtensionFromPath(keyImageBigPath).equals("ppm")) {
+            try {
+                keyImageBig = new File(ImageConverter.convert(keyImageBigPath, "ppm"));
+                System.out.println("Successfully converted file to PPM!");
+            } catch (Exception ex) {
+                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
         // Hiding image inside PPM Image
         type = "photo";
         Steganographer steg2 = new Steganographer(keyImageBig);
         steg2.hide(imageToHide, type);
         steg2.reveal(stegFile, type);
+        
+    }
+    
+    public static String getFileExtensionFromPath(String path) {
+        int i = path.lastIndexOf('.');
+        if (i > 0) {
+            return path.substring(i + 1);
+        }
+        return "";
     }
 }

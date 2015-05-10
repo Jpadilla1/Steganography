@@ -43,7 +43,6 @@ public final class PPMImage {
                     ));
                 }
             }
-            
             this.size = pixels.size() * 24;
             
         } catch (FileNotFoundException ex) {
