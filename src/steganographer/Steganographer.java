@@ -3,13 +3,11 @@ package steganographer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import imageconverter.ImageConverter;
 import java.util.regex.Pattern;
 
 
@@ -48,7 +46,7 @@ public class Steganographer {
         return bits;
     }
 
-    public void hide(byte[] bytes, String type) {
+    public boolean hide(byte[] bytes, String type) {
         ArrayList<Integer> bits = getBytesInBits(bytes);
         if (canHide(bits.size())) {
             int bitIndex = 0;
@@ -70,8 +68,10 @@ public class Steganographer {
                 newImage.add(pixel);
             }
             printPixelsToFile(newImage);
+            return true;
         } else {
             System.err.println("Cannot hide!");
+            return false;
         }
     }
     
@@ -109,9 +109,15 @@ public class Steganographer {
             lines.add(this.image.getType());
             lines.add(this.image.getWidth() + " " + this.image.getHeight());
             lines.add(Integer.toString(this.image.getMaxColors()));
-            lines.add(pixels.stream()
-                    .map(Pixel::toString)
-                    .collect(Collectors.joining(" ")));
+            String pixs = "";
+            for (int i = 0; i < pixels.size(); i++) {
+                if (i != 0 && i%4 == 0) {
+                    lines.add(pixs);
+                    pixs = "";
+                }
+                pixs += pixels.get(i) + " ";
+            }
+            lines.add(pixs);
             Files.write(
                     Paths.get(
                             this.image.getPath().substring(0, this.image.getPath().lastIndexOf(File.separator)) + "/stego-image.ppm"),
@@ -127,7 +133,7 @@ public class Steganographer {
             if ((i + 8) < bits.size()) {
                 String tmp = String.join("", bits.subList(i, i+8).stream().map(x -> Integer.toString(x)).collect(Collectors.joining("")));
                 if (!Pattern.matches("[01]+", tmp)) {
-                    break;
+                    continue;
                 }
                 String letter = new Character((char)Integer.parseInt(tmp, 2)).toString();
                 message += letter;
@@ -158,6 +164,15 @@ public class Steganographer {
                     bytes.add(color);
                 }
             }
+//            String pixs = "";
+//            for (int i = 0; i < bytes.size(); i++) {
+//                if (i != 0 && i%16 == 0) {
+//                    lines.add(pixs);
+//                    pixs = "";
+//                }
+//                pixs += bytes.get(i) + " ";
+//            }
+//            lines.add(pixs);
             lines.add(String.join(" ", bytes.stream().collect(Collectors.joining(""))).trim());
             Files.write(
                     Paths.get(
@@ -166,75 +181,5 @@ public class Steganographer {
         } catch (IOException ex) {
             Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        String type            = "text";
-        String textToHide      = "Let's hide some text!";
-        String keyImagePath    = "/Users/josepadilla/Desktop/nissan.ppm";
-        String keyImageBigPath = "/Users/josepadilla/Desktop/test.png";
-        File keyImage          = new File(keyImagePath);
-        File keyImageBig       = new File(keyImageBigPath);
-        File stegFile          = new File("/Users/josepadilla/Desktop/stego-image.ppm");
-        Path pathOfImage       = Paths.get("/Users/josepadilla/Desktop/nissan.ppm");
-        byte[] imageToHide     = Files.readAllBytes(pathOfImage);
-        
-        // Check if image needs conversion
-        if (!getFileExtensionFromPath(keyImagePath).equals("ppm")) {
-            try {
-                keyImage = new File(ImageConverter.convert(keyImagePath, "ppm"));
-                System.out.println("Successfully converted file to PPM!");
-            } catch (Exception ex) {
-                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        
-        // Hiding text in PPM Image
-        Steganographer steg = new Steganographer(keyImage);
-        steg.hide(textToHide.getBytes(), type);
-        steg.reveal(stegFile, type);
-        
-        try {
-            ImageConverter.convert("/Users/josepadilla/Desktop/stego-image.ppm", "jpg");
-            ImageConverter.convert("/Users/josepadilla/Desktop/stego-image.jpg", "ppm");
-
-            // Hiding text in PPM Image
-            Steganographer steg2 = new Steganographer(keyImage);
-            steg2.reveal(stegFile, type);
-        
-//        try {
-//                ImageConverter.convert("/Users/josepadilla/Desktop/stego-image.ppm", "jpg");
-//                System.out.println("Successfully converted file to PPM!");
-//            } catch (Exception ex) {
-//                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        
-//        // Check if image needs conversion
-//        if (!getFileExtensionFromPath(keyImageBigPath).equals("ppm")) {
-//            try {
-//                keyImageBig = new File(ImageConverter.convert(keyImageBigPath, "ppm"));
-//                System.out.println("Successfully converted file to PPM!");
-//            } catch (Exception ex) {
-//                Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        }
-//        
-//        // Hiding image inside PPM Image
-//        type = "photo";
-//        Steganographer steg2 = new Steganographer(keyImageBig);
-//        steg2.hide(imageToHide, type);
-//        steg2.reveal(stegFile, type);
-        } catch (Exception ex) {
-            Logger.getLogger(Steganographer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-    }
-    
-    public static String getFileExtensionFromPath(String path) {
-        int i = path.lastIndexOf('.');
-        if (i > 0) {
-            return path.substring(i + 1);
-        }
-        return "";
     }
 }
